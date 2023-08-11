@@ -10,9 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@wppconnect-team/wppconnect": "^1.27.3",
     "moment": "^2.29.4",
     "mysql2": "^3.4.0",
     "node-schedule": "^2.1.1",
+    "npm-check-updates": "^16.10.17",
     "puppeteer": "^19.4.0",
     "schedule": "^0.5.0",
     "sequelize": "^6.32.1",

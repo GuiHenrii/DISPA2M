@@ -1,100 +1,72 @@
-const venom = require("venom-bot");
-const fs = require("fs");
-const dialogo1 = require("./dialogos/dialogo1");
+import wppconnect from "@wppconnect-team/wppconnect";
+import fs from "fs";
+import dialogoAvalia from "./dialogos/dialogoAvalia.js";
 
-const contatos = JSON.parse(fs.readFileSync("contatos.json", "utf8"));
+const args = process.argv.slice(2);
+console.log(args[0]);
+const sessionName = args[0];
 
-venom
-  .create({
-    session: "Disparo-A2m", //name of session
-  })
+wppconnect
+  .create({ session: sessionName })
   .then((client) => start(client, 0))
-  .catch((erro) => {
-    console.log(erro);
+  .catch((error) => {
+    console.error("Erro ao criar o cliente Venom:", error);
+    process.exit(1); // Termina o processo com um código de erro
   });
 
 async function start(client, index) {
   console.log("iniciado");
 
-  if (index >= contatos.length) {
-    console.log("Todas as mensagens foram enviadas!");
-    return;
-  }
-
-  const contato = contatos[index];
-  const telefone = contato.telefone;
-  const nome = contato.nome;
-  const id = contato.id;
-  const mensagem = "Olá! Tudo bem?";
-
-  const numero = "55" + telefone + "@c.us";
-
-  await client
-    .sendText(numero, mensagem)
-    .then(() => {
-      console.log(
-        `Mensagem enviada para ${nome} no número ${numero}, foram disparados ${id}`
-      );
-      setTimeout(() => {
-        start(client, index + 1); // Chamar a função após 30 segundos
-      }, 20000); // Aguardar 30 segundos
-    })
-    .catch((error) => {
-      console.error(`Erro ao enviar mensagem para: ${numero}`, error);
-      setTimeout(() => {
-        start(client, index + 1); // Chamar a função após 30 segundos, mesmo em caso de erro
-      }, 20000); // Aguardar 30 segundos
-    });
-
   client.onMessage(async (message) => {
-    console.log(message);
-    // Verifica se a mensagem é de grupo e se o número de telefone já está salvo no JSON
-    if (
-      message.isGroupMsg === false &&
-      !verificarTelefoneExistente(message.from)
-    ) {
-      console.log("Creating new atendimento entry");
-
-      const dados = {
-        tel: message.from,
-        nome: message.notifyName,
-        atendido: 1,
-      };
-
-      dialogo1(client, message);
-      salvaContato(dados);
-    }
+    const contatoBot = message.from;
+    // if (contatoBot != "5511999722227@c.us") {
+    //   console.log("contato diferente");
+    //   return;
+    // }
   });
+  if (message.fromMe) {
+    console.log("Mensagem enviada pelo bot:", message.body);
+
+    // Verifique se a mensagem contém o texto desejado
+    if (message.body.includes("Vou encerrar o seu atendimento")) {
+      // Faça algo quando o bot enviar essa mensagem específica
+      console.log("O bot encerrou o atendimento.");
+      // Por exemplo, você pode desconectar o bot ou executar outras ações aqui
+    }
+  }
 }
 
-function verificarTelefoneExistente(telefone) {
-  const atendimentos = JSON.parse(
-    fs.readFileSync("atendimentos.json", "utf8")
+if (
+  message.type === "system" ||
+  message.content === "Esta mensagem foi excluída"
+) {
+  // Ignorar mensagens do sistema ou mensagens excluídas
+  console.log(
+    "Mensagem do sistema ou mensagem excluída recebida:",
+    message.body
   );
-  return atendimentos.some((item) => item.tel === telefone);
+  return;
 }
+console.log(message.from);
+if (
+  message.isGroupMsg === false &&
+  message.type === "chat" &&
+  isAllowedSender
+) {
+  console.log("Novo atendimento criado ");
+  const cliente = message.body;
+  console.log(cliente);
+  const mensagem =
+    "Olá! Vou dar continuidade do seu atendimento por aqui, sobre a recuperação do valor perdido em consórcio!!";
 
-function salvaContato(tempObj) {
-  console.log("Início da função salvaContato");
-  console.log("Objeto recebido:", tempObj);
+  const numero = "55" + contatoBot + "@c.us";
 
-  fs.readFile("atendimentos.json", "utf8", (err, data) => {
-    if (err) {
-      console.error("Erro ao ler o arquivo atendimentos.json", err);
-      return;
-    }
-    console.log("Arquivo atendimentos.json lido com sucesso");
-    const atendimentos = JSON.parse(data);
-
-    atendimentos.push(tempObj);
-
-    const json = JSON.stringify(atendimentos, null, 2);
-    fs.writeFile("atendimentos.json", json, "utf8", (err) => {
-      if (err) {
-        console.error("Erro ao escrever o arquivo atendimentos.json", err);
-        return;
-      }
-      console.log("Arquivo atendimentos.json salvo com sucesso");
+  client
+    .sendText(cliente, mensagem)
+    .then(() => {
+      console.log(`Mensagem enviada no número ${numero}`);
+    })
+    .catch((erro) => {
+      console.error("Error when sending: ", erro); //return object error
     });
-  });
 }
